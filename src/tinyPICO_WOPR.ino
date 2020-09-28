@@ -307,7 +307,7 @@ void DisplayTime()
   }
   // Formt the contents of the time struct into a string for display
   char DateAndTimeString[12];
-  String sep = clockSeparators[settings_separator];
+  const char* sep = clockSeparators[settings_separator].c_str();
   if ( timeinfo.tm_hour < 10 )
     sprintf(DateAndTimeString, "   %d%s%02d%s%02d", timeinfo.tm_hour, sep, timeinfo.tm_min, sep, timeinfo.tm_sec);
   else
@@ -768,14 +768,14 @@ void Button4Press()
 void StartWifi()
 {
 
-  if ( WIFI_SSID == "" )
+  if ( sizeof(WIFI_SSID)==1)
   {
     DisplayText( "SSID NOT SET" );
     RGB_SetColor_ALL( Color(255, 0, 0) );
     hasWiFi = false;
     delay(2000);
   }
-  else if ( WIFI_PASS == "" )
+  else if ( sizeof(WIFI_PASS)==1 )
   {
     DisplayText( "PASS NOT SET" );
     RGB_SetColor_ALL( Color(255, 0, 0) );
