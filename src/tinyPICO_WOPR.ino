@@ -398,11 +398,16 @@ void FillCodes()
 // Randomise the order of the code being solved
 void RandomiseSolveOrder()
 {
+  // bws 20200929 reset code_solve array back to initial state
+  for ( uint8_t i = 0; i<12; i++)
+    code_solve_order_random[i] = 99;
+
   for ( uint8_t i = 0; i < 12; i++ )
   {
     uint8_t ind = random(0, 12);
-    while ( code_solve_order_random[ind] < 99 )
+    while ( code_solve_order_random[ind] < 99 ) {
       ind = random(0, 12);
+    }
 
     code_solve_order_random[ind] = i;
   }
@@ -451,7 +456,6 @@ void ResetCode()
 
     // Randomise the order in which we solve this code
     RandomiseSolveOrder();
-
     // Set the code length and populate the code with the stored message
     solveCountFinished = 12;
     for ( uint8_t i = 0; i < 12; i++ )
@@ -468,18 +472,18 @@ void ResetCode()
   // Clear code display buffer
   for ( uint8_t i = 0; i < 12; i++ )
   {
-    if ( currentMode == 0 && ( i == 3 || i == 8 ) )
+    if ( currentMode == MOVIE && ( i == 3 || i == 8 ) )
       displaybuffer[ i ] = ' ';
     else
       displaybuffer[ i ] = '-';
   }
 }
+
 /*  Solve the code based on the order of the solver for the current mode
     This is fake of course, but so was the film!
     The reason we solve based on a solver order, is so we can solve the code
     in the order it was solved in the movie.
 */
-
 void SolveCode()
 {
   // If the number of digits solved is less than the number to be solved
@@ -773,14 +777,14 @@ void StartWifi()
     DisplayText( "SSID NOT SET" );
     RGB_SetColor_ALL( Color(255, 0, 0) );
     hasWiFi = false;
-    delay(2000);
+    delay(5000);
   }
   else if ( sizeof(WIFI_PASS)==1 )
   {
     DisplayText( "PASS NOT SET" );
     RGB_SetColor_ALL( Color(255, 0, 0) );
     hasWiFi = false;
-    delay(2000);
+    delay(5000);
   }
   else
   {
@@ -804,7 +808,7 @@ void StartWifi()
       RGB_SetColor_ALL( Color(255, 0, 0) );
       hasWiFi = false;
       //while(1) {delay(1000);}
-      delay(3000);
+      delay(5000);
     }
     else
     {
@@ -814,7 +818,7 @@ void StartWifi()
 
       hasWiFi = true;
 
-      delay(500);
+      delay(1000);
 
       //init and get the time
 
@@ -838,7 +842,7 @@ void StartWifi()
         RGB_SetColor_ALL( Color(0, 0, 255) );
       }
 
-      delay(1000);
+      delay(2000);
     }
   }
 }
@@ -952,7 +956,7 @@ void loop()
   }
   else
   {
-    if ( currentMode == 3 )
+    if ( currentMode == CLOCK )
     {
       if ( nextBeep < millis() )
       {
