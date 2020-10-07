@@ -30,10 +30,12 @@
 #define DAC 25 // RGB LED Strip
 
 #ifndef WIFI_SSID
-#define WIFI_SSID ""
+  #error Please define WIFI_SSID in environment. 
+//#define WIFI_SSID ""
 #endif
 #ifndef WIFI_PASS
-#define WIFI_PASS ""
+  #error Please define WIFI_PASS in environment
+//#define WIFI_PASS ""
 #endif
 
 // Not using the following two variables. Declared to test defines above.
@@ -368,24 +370,20 @@ void DisplayTime()
       case 3: case 23:  stndrdth = "rd"; break;
       default: stndrdth = "th"; break;
     }
-    sprintf(buf, "%2d%s  ", timeinfo.tm_mday, stndrdth);
+    sprintf(buf, "%2d%s  ", timeinfo.tm_mday, stndrdth.c_str());
   }
   else if (sep=='/') {
     if (settings_datefmt==0) {  // DD/MM
       if (settings_lzero)
         sprintf(buf, "%02d/%02d ", timeinfo.tm_mday, timeinfo.tm_mon+1);
-      else if (timeinfo.tm_mon+1<10)
-        sprintf(buf, "%2d/%d  ", timeinfo.tm_mday, timeinfo.tm_mon+1);
-      else
-        sprintf(buf, "%2d/%2d ", timeinfo.tm_mday, timeinfo.tm_mon+1);
+      else 
+        sprintf(buf, "%d/%d ", timeinfo.tm_mday, timeinfo.tm_mon+1);
     }
     else if (settings_datefmt==1) {  // MM/DD
       if (settings_lzero)
         sprintf(buf, "%02d/%02d ", timeinfo.tm_mon+1, timeinfo.tm_mday);
-      else if (timeinfo.tm_mday<10)
-        sprintf(buf, "%2d/%d  ", timeinfo.tm_mon+1, timeinfo.tm_mday);
-  else
-        sprintf(buf, "%2d/%2d ", timeinfo.tm_mon+1, timeinfo.tm_mday);
+      else 
+        sprintf(buf, "%d/%d ", timeinfo.tm_mon+1, timeinfo.tm_mday);
     }
     else { // DDMmm (or D Mmm)
       sprintf(buf, "%d", timeinfo.tm_mday);
@@ -397,27 +395,35 @@ void DisplayTime()
   else
     sprintf(buf, "  ");
 
+// Lets put the time string in the correct buffer location.  Probably should be a better way.
+  char *loc;
+  if (strlen(buf)==5) {
+    strcat(buf, " ");
+  }
+  loc = &buf[strlen(buf)];
+  
+
   if ( timeinfo.tm_hour < 10 && !settings_lzero )
-    sprintf(buf+strlen(buf), " %d%c%02d%c%02d", timeinfo.tm_hour, sep, timeinfo.tm_min, sep, timeinfo.tm_sec);
+    sprintf(loc, " %d%c%02d%c%02d", timeinfo.tm_hour, sep, timeinfo.tm_min, sep, timeinfo.tm_sec);
   else
-    sprintf(buf+strlen(buf), "%02d%c%02d%c%02d", timeinfo.tm_hour, sep, timeinfo.tm_min, sep, timeinfo.tm_sec);
+    sprintf(loc, "%02d%c%02d%c%02d", timeinfo.tm_hour, sep, timeinfo.tm_min, sep, timeinfo.tm_sec);
 
   // Iterate through each digit on the display and populate the time, or clear the digit
-  uint8_t curDisplay = 0;
+  // uint8_t curDisplay = 0;
   uint8_t curDigit = 0;
 
   for ( uint8_t i = 0; i < strlen(buf); i++ )
   {
     if (buf[i+1]=='.')
-      matrix[curDisplay].writeDigitAscii(curDigit, buf[i++], true);
+      matrix[curDigit / 4].writeDigitAscii(curDigit % 4, buf[i++], true);
     else
-      matrix[curDisplay].writeDigitAscii(curDigit, buf[i]);
+      matrix[curDigit / 4].writeDigitAscii(curDigit % 4, buf[i]);
     curDigit++;
-    if ( curDigit == 4 )
-    {
-      curDigit = 0;
-      curDisplay++;
-    }
+    // if ( curDigit == 4 )
+    // {
+    //   curDigit = 0;
+    //   curDisplay++;
+    // }
   }
 
   // Show whatever is in the display buffer on the display
@@ -427,8 +433,8 @@ void DisplayTime()
 // Display whatever is in txt on the display
 void DisplayText(String txt)
 {
-  uint8_t curDisplay = 0;
-  uint8_t curDigit = 0;
+  // uint8_t curDisplay = 0;
+  // uint8_t curDigit = 0;
 
   Clear();
 
@@ -436,15 +442,15 @@ void DisplayText(String txt)
   for ( uint8_t i = 0; i < txt.length(); i++ )
   {
      if (i<txt.length()-1 && txt.charAt(i+1)=='.')
-      matrix[curDisplay].writeDigitAscii( curDigit, txt.charAt(i), true);
+      matrix[i / 4].writeDigitAscii( i % 4, txt.charAt(i), true);
     else
-      matrix[curDisplay].writeDigitAscii( curDigit, txt.charAt(i));
-    curDigit++;
-    if ( curDigit == 4 )
-    {
-      curDigit = 0;
-      curDisplay++;
-    }
+      matrix[i / 4].writeDigitAscii( i % 4, txt.charAt(i));
+    // curDigit++;
+    // if ( curDigit == 4 )
+    // {
+    //   curDigit = 0;
+    //   curDisplay++;
+    // }
   }
 
   // Show whatever is in the display buffer on the display
@@ -461,8 +467,8 @@ uint16_t GetNextSolveStep()
 // Fill whatever is in the code buffer into the display buffer
 void FillCodes()
 {
-  int matrix_index = 0;
-  int character_index = 0;
+  // int matrix_index = 0;
+  // int character_index = 0;
   char c = 0;
   char c_code = 0;
 
@@ -477,13 +483,15 @@ void FillCodes()
       while ( ( c > 57 && c < 65 ) || c == c_code )
         c = random( 48, 91 );
     }
-    matrix[matrix_index].writeDigitAscii( character_index, c );
-    character_index++;
-    if ( character_index == 4 )
-    {
-      character_index = 0;
-      matrix_index++;
-    }
+    matrix[i / 4].writeDigitAscii(i % 4,c);
+    
+    // matrix[matrix_index].writeDigitAscii( character_index, c );
+    // character_index++;
+    // if ( character_index == 4 )
+    // {
+    //   character_index = 0;
+    //   matrix_index++;
+    // }
   }
 
   // Show whatever is in the display buffer on the display
