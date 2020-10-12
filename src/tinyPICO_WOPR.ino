@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include "esp_log.h"
+#include "esp32-hal-log.h"
 #include <Wire.h>
 #include <WIFI.h>
 #include "Adafruit_GFX.h" 
@@ -137,6 +139,7 @@ uint32_t defcon_colors[] = {
 
 // General stuff
 unsigned long countdownToClock = 0;
+byte lastSeconds = 0;
 
 // Setup 3 AlphaNumeric displays (4 digits per display)
 Adafruit_AlphaNum4 matrix[3] = { Adafruit_AlphaNum4(), Adafruit_AlphaNum4(), Adafruit_AlphaNum4() };
@@ -161,7 +164,15 @@ OneButton Button3(BUTTON3, false);
 OneButton Button4(BUTTON4, false);
 #endif
 
-
+static const char *TAG = "WOPR";
+// Use ESP IDF logging
+// Set CORE_DEBUG_LEVEL=5 or via build_flags = -DCORE_DEBUG_LEVEL=5 for PlatformIO
+void logMemory() {
+  ESP_LOGI(TAG,"Total heap: %d", ESP.getHeapSize());
+  ESP_LOGI(TAG,"Free heap: %d", ESP.getFreeHeap());
+  ESP_LOGI(TAG,"Total PSRAM: %d", ESP.getPsramSize());
+  ESP_LOGI(TAG,"Free PSRAM: %d", ESP.getFreePsram());
+}
 
 void loadSettings()
 {
@@ -343,6 +354,33 @@ void SetDisplayBrightness( int val )
     matrix[x].setBrightness(val);
 }
 
+void RGB_SetSeconds( byte secs )
+{
+  // Only update the defcon display if the value has changed
+  // to prevent flickering
+  if ( secs == lastSeconds ) return;
+  lastSeconds = secs;
+  RGB_Clear();
+  // Zero buffer
+  for (int i = 0; i < 5; i++)
+    leds[i] = 0;
+
+  // 10's (0-5)
+  if ( (secs / 10) > 0 ) {
+    int i = (secs / 10) - 1;
+    leds[i] = defcon_colors[i];
+  }
+  if ( (secs % 10) > 0) {
+    // Convert ones place seconds to binary and OR with tens decimal
+    int ones = secs % 10;
+    for (int i=0; i <= 4; i++) {
+      if ( (ones >> i) & 1 )
+        leds[i] ^= defcon_colors[4 - i];
+    }
+  }
+  RGB_FillBuffer();
+}
+
 // Take the time data from the RTC and format it into a string we can display
 void DisplayTime()
 {
@@ -425,7 +463,7 @@ void DisplayTime()
     //   curDisplay++;
     // }
   }
-
+   RGB_SetSeconds(timeinfo.tm_sec);
   // Show whatever is in the display buffer on the display
   Display();
 }
@@ -954,6 +992,8 @@ void StartWifi()
 void setup() {
   
   Serial.begin(SERIALRATE);
+  esp_log_level_set("*", ESP_LOG_INFO);
+  logMemory();
   delay(1000);
   Serial.println("");
   Serial.println("Wargames Missile Codes");
@@ -991,12 +1031,12 @@ void setup() {
   ledcAttachPin(DAC, channel);
 
 
-  Serial.println("Setup SPIFFS");
+  ESP_LOGI(TAG,"Setup SPIFFS");
   if (!SPIFFS.begin(true)) {
-      Serial.println("An Error has occurred while mounting SPIFFS, Formatting");
+      ESP_LOGI(TAG,"An Error has occurred while mounting SPIFFS, Formatting");
       bool formatted = SPIFFS.format();
       if (!formatted) {
-        Serial.println("SPIFFS format failed");
+        ESP_LOGI(TAG,"SPIFFS format failed");
       }
   
   }
